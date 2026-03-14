@@ -76,8 +76,9 @@ impl From<RequestId> for u64 {
 /// should decrement its own counter and if it reaches 0 then the inode number
 /// may be recycled and your filesystem implementation may clean up its
 /// internal data-structures relating to that inode.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, zerocopy::IntoBytes, zerocopy::Immutable)]
 #[cfg_attr(feature = "serializable", derive(Serialize, Deserialize))]
+#[repr(transparent)]
 pub struct INodeNo(pub u64);
 
 impl INodeNo {

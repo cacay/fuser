@@ -104,6 +104,17 @@ impl Notifier {
         self.send_inval(notify_code::FUSE_NOTIFY_DELETE, &notif)
     }
 
+    /// Ask the kernel to prune its dentry/inode caches for the given inodes.
+    /// This is best-effort: inodes with active references are skipped.
+    /// The kernel will send `FUSE_FORGET` messages for pruned inodes.
+    /// # Errors
+    /// Returns an error if the notification data is too large.
+    /// Returns an error if the kernel rejects the notification.
+    pub fn prune(&self, inodes: &[INodeNo]) -> io::Result<()> {
+        let notif = Notification::new_prune(inodes).map_err(Self::too_big_err)?;
+        self.send(notify_code::FUSE_NOTIFY_PRUNE, &notif)
+    }
+
     #[allow(unused)]
     fn send_inval(&self, code: notify_code, notification: &Notification<'_>) -> io::Result<()> {
         match self.send(code, notification) {

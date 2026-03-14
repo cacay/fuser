@@ -40,7 +40,7 @@ pub(crate) const FUSE_KERNEL_MINOR_VERSION: u32 = if cfg!(target_os = "macos") {
     // So let's declare protocol version 19 to be safe.
     19
 } else {
-    40
+    45
 };
 
 #[repr(C)]
@@ -182,6 +182,9 @@ pub(crate) enum fuse_notify_code {
     FUSE_NOTIFY_STORE = 4,
     FUSE_NOTIFY_RETRIEVE = 5,
     FUSE_NOTIFY_DELETE = 6,
+    FUSE_NOTIFY_RESEND = 7,
+    FUSE_NOTIFY_INC_EPOCH = 8,
+    FUSE_NOTIFY_PRUNE = 9,
 }
 
 #[repr(C)]
@@ -729,6 +732,14 @@ pub(crate) struct fuse_notify_retrieve_in {
     pub(crate) dummy2: u32,
     pub(crate) dummy3: u64,
     pub(crate) dummy4: u64,
+}
+
+#[repr(C)]
+#[derive(Debug, IntoBytes, KnownLayout, Immutable)]
+pub(crate) struct fuse_notify_prune_out {
+    pub(crate) count: u32,
+    pub(crate) padding: u32,
+    pub(crate) spare: u64,
 }
 
 #[repr(C)]

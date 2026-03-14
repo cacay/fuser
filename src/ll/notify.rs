@@ -114,6 +114,15 @@ impl<'a> Notification<'a> {
         Ok(Self::from_struct_with_name(&r, name.as_bytes()))
     }
 
+    pub(crate) fn new_prune(inodes: &'a [INodeNo]) -> Result<Self, TryFromIntError> {
+        let r = abi::fuse_notify_prune_out {
+            count: inodes.len().try_into()?,
+            padding: 0,
+            spare: 0,
+        };
+        Ok(Self::from_struct_with_data(&r, inodes.as_bytes()))
+    }
+
     pub(crate) fn new_poll(kh: PollHandle) -> Self {
         let r = abi::fuse_notify_poll_wakeup_out { kh: kh.0 };
         Self::from_struct(&r)
@@ -209,6 +218,21 @@ mod test {
         let expected = vec![
             0x18, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
             0x00, 0x00, 0x21, 0x43, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ];
+        assert_eq!(n, expected);
+    }
+
+    #[test]
+    fn prune() {
+        let n = Notification::new_prune(&[INodeNo(0x42), INodeNo(0x43)])
+            .unwrap()
+            .with_iovec(abi::fuse_notify_code::FUSE_NOTIFY_PRUNE, ioslice_to_vec)
+            .unwrap();
+        let expected = vec![
+            0x30, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x43, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         ];
         assert_eq!(n, expected);
     }
