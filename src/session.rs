@@ -427,6 +427,7 @@ impl<FS: Filesystem> Session<FS> {
             }
 
             // Remember the ABI version supported by kernel and mark the session initialized.
+            debug!("Kernel FUSE protocol version: {}", v);
             self.proto_version = Some(v);
 
             // Log capability status for debugging
