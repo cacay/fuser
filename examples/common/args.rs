@@ -25,6 +25,10 @@ pub struct CommonArgs {
     /// when multiple threads are used. Requires Linux 4.5+.
     #[clap(long)]
     pub clone_fd: bool,
+
+    /// Additional mount option. Can be repeated.
+    #[clap(long = "mount-option", value_name = "OPTION")]
+    pub mount_options: Vec<String>,
 }
 
 impl CommonArgs {
@@ -33,6 +37,9 @@ impl CommonArgs {
         if self.auto_unmount {
             config.mount_options.push(MountOption::AutoUnmount);
         }
+        config
+            .mount_options
+            .extend(self.mount_options.iter().cloned().map(MountOption::CUSTOM));
         if self.allow_root {
             config.acl = SessionACL::RootAndOwner;
         }

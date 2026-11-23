@@ -1,5 +1,10 @@
 # FUSE for Rust - Changelog
 
+## Unreleased
+
+New features:
+* Support `Config::n_threads` greater than 1 on macOS
+
 ## 0.19.0 - 2026-11-20
 
 Breaking changes:
