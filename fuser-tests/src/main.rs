@@ -11,6 +11,7 @@ mod fuse_conf;
 mod fusermount;
 mod libfuse;
 mod mount_util;
+mod threads;
 mod unmount;
 mod users;
 

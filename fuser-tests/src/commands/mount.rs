@@ -1,16 +1,10 @@
 //! Main mount tests
 
-use std::convert::Infallible;
 use std::fmt::Write;
-use std::io;
-use std::time::Duration;
-use std::time::Instant;
 
 use anyhow::Context;
 use anyhow::bail;
 use tokio::process::Command;
-use tokio::task::JoinError;
-use tokio::task::JoinSet;
 
 use crate::ansi::green;
 use crate::canonical_temp_dir::CanonicalTempDir;
@@ -24,6 +18,7 @@ use crate::fusermount::Fusermount;
 use crate::libfuse::Libfuse;
 use crate::mount_util::assert_no_fuse_mount;
 use crate::mount_util::wait_for_fuse_mount;
+use crate::threads::assert_all_threads_serve;
 use crate::unmount::Unmount;
 use crate::unmount::kill_and_unmount;
 use crate::users::assert_can_read_as_user;
@@ -170,43 +165,7 @@ async fn run_test_inner(
 
     // Check all threads handle requests.
     if n_threads != 1 {
-        let mut tasks = JoinSet::new();
-        for _ in 0..20 {
-            let hello_path = hello_path.clone();
-            tasks.spawn(async move {
-                loop {
-                    tokio::fs::read_to_string(&hello_path).await?;
-                }
-            });
-        }
-
-        let stats_per_thread = mount_dir.path().join("stats-per-thread");
-
-        let start = Instant::now();
-
-        let stats_per_thread = loop {
-            let stats_per_thread = tokio::fs::read_to_string(&stats_per_thread).await?;
-            let stats_per_thread: Vec<u64> = stats_per_thread
-                .lines()
-                .map(|l| l.parse().context("Failed to parse stats line"))
-                .collect::<anyhow::Result<_>>()?;
-            anyhow::ensure!(stats_per_thread.len() == n_threads);
-            if stats_per_thread.iter().all(|t| *t > 0) {
-                break stats_per_thread;
-            }
-
-            if start.elapsed() > Duration::from_secs(5) {
-                bail!("Not all threads handled requests in 5s; current stats: {stats_per_thread:?}")
-            }
-
-            match tasks.try_join_next() {
-                None => continue,
-                Some(Err::<_, JoinError>(e)) => return Err(e).context("Failed to join task"),
-                Some(Ok(Err::<_, io::Error>(e))) => return Err(e).context("Reader thread failed"),
-                Some(Ok(Ok::<Infallible, _>(x))) => match x {},
-            }
-        };
-
+        let stats_per_thread = assert_all_threads_serve(mount_dir.path(), n_threads).await?;
         green!("OK multi-threaded tests passed: {stats_per_thread:?}");
     }
 

@@ -300,10 +300,10 @@ impl<FS: Filesystem> Session<FS> {
 
         let n_threads = config.n_threads.unwrap_or(1);
 
-        if !cfg!(target_os = "linux") && n_threads != 1 {
-            // TODO: check whether it works on macOS/FreeBSD and enable if it works.
+        if !cfg!(any(target_os = "linux", target_os = "macos")) && n_threads != 1 {
+            // TODO: check whether it works on FreeBSD and enable if it works.
             return Err(io::Error::other(
-                "n_threads != 1 is only supported on Linux",
+                "n_threads != 1 is only supported on Linux and macOS",
             ));
         }
 
